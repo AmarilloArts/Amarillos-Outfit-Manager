@@ -149,21 +149,28 @@ class AMARILLO_OT_remove_managed_model(Operator):
     
     def execute(self, context):
         models = context.scene.amarillo_managed_models
-        model = models[context.scene.amarillo_active_model_index]
+        active_index = context.scene.amarillo_active_model_index
         
-        # Remove all shape key entries referencing this model from all outfits
-        for outfit in context.scene.amarillo_outfits:
-            # Create list of indices to remove
-            to_remove = [i for i, sk in enumerate(outfit.shape_keys) if sk.model == model.object]
-            # Remove from highest index to lowest to maintain index validity
-            for i in reversed(to_remove):
-                outfit.shape_keys.remove(i)
-                if outfit.active_shape_key_index >= len(outfit.shape_keys):
-                    outfit.active_shape_key_index = max(0, len(outfit.shape_keys) - 1)
+        if active_index >= 0 and active_index < len(models):
+            model = models[active_index]
+            
+            # Remove all shape key entries referencing this model from all outfits
+            for outfit in context.scene.amarillo_outfits:
+                # Create list of indices to remove
+                to_remove = [i for i, sk in enumerate(outfit.shape_keys) if sk.model == model.object]
+                # Remove from highest index to lowest to maintain index validity
+                for i in reversed(to_remove):
+                    outfit.shape_keys.remove(i)
+                    if outfit.active_shape_key_index >= len(outfit.shape_keys):
+                        outfit.active_shape_key_index = max(0, len(outfit.shape_keys) - 1)
+            
+            # Remove the model
+            models.remove(active_index)
+            context.scene.amarillo_active_model_index = max(0, active_index - 1)
+            
+            return {'FINISHED'}
         
-        context.scene.amarillo_active_model_index = max(0, context.scene.amarillo_active_model_index - 1)
-        models.remove(context.scene.amarillo_active_model_index)
-        return {'FINISHED'}
+        return {'CANCELLED'}
 
 class AMARILLO_OT_add_shape_key(Operator):
     bl_idname = "amarillo.add_shape_key"
